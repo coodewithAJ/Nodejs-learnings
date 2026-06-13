@@ -7,7 +7,12 @@ const emmiter = new EventEmitter();
 const server = http.createServer((req, res) => {
   const { pathname, searchParams } = new URL(req.url, "http://localhost:5000");
   if (pathname === "/home") {
-    return res.end("Hello from home page");
+    let sum = 0;
+    for (let index = 0; index < 100000; index++) {
+      sum+=index;
+      
+    }
+    return res.end(`Hello from home page ${sum}`);
   }
 });
 
