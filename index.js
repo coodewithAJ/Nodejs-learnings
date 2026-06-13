@@ -1,18 +1,36 @@
 import http from "http";
 import fs from "fs";
 import EventEmitter from "events";
+import {
+  Worker,
+  isMainThread,
+  parentPort,
+  workerData,
+} from "node:worker_threads";
 
 const emmiter = new EventEmitter();
 
 const server = http.createServer((req, res) => {
   const { pathname, searchParams } = new URL(req.url, "http://localhost:5000");
   if (pathname === "/home") {
-    let sum = 0;
-    for (let index = 0; index < 100000; index++) {
-      sum+=index;
-      
-    }
-    return res.end(`Hello from home page ${sum}`);
+    return res.end(`Hello from home page`);
+  }
+  if (pathname === "/blocking") {
+    const worker = new Worker("./workerthread.js");
+    
+    worker.on("message", (data) => {
+      return res.end(`Hello from home page ${data}`);
+    });
+    worker.on("error", (error) => {
+      return res.end(`Something went wrong ${error.message}`);
+    });
+
+    // let sum = 0;
+    // for (let index = 0; index < 1000000; index++) {
+    //   sum+=index;
+
+    // }
+    // return res.end(`Hello from home page ${sum}`);
   }
 });
 
@@ -28,10 +46,10 @@ fs.readFile("./test.txt", (err, data) => {
 fs.readFileSync("./test.txt");
 
 // events
-const task1Handler = (data)=>{
+const task1Handler = (data) => {
   console.log("task1 completed ", data.username);
-// throw new Error("something broke")
-}
+  // throw new Error("something broke")
+};
 emmiter.on("task1", task1Handler);
 
 setTimeout(() => {
@@ -42,24 +60,21 @@ setTimeout(() => {
 // emmiter.removeAllListeners('task1');
 // emmiter.off('task1',task1Handler)
 
+emmiter.on("error", (err) => {
+  console.error(err?.message);
+});
 
-emmiter.on('error',(err)=>{
-    console.error(err?.message)
-
-})
-
-
-class Database extends EventEmitter{
-    connect(){
-        this.emit("connected")
-    }
+class Database extends EventEmitter {
+  connect() {
+    this.emit("connected");
+  }
 }
 
 const db = new Database();
-db.on("connected",()=>{
-    console.log('db connected ')
-})
-db.connect()
+db.on("connected", () => {
+  console.log("db connected ");
+});
+db.connect();
 server.listen(5000, () => {
   console.log("Server running on port 5000");
 });
